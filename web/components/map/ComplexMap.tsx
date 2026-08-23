@@ -58,12 +58,19 @@ export function ComplexMap({
   }, [state, lat, lng, name, ret]);
 
   if (!lat || !lng) {
+    // 좌표를 못 찾는 단지는 대부분 재건축으로 사라진 곳이다
+    // (청실1차 → 래미안대치팰리스처럼). 지도 서비스에 더 이상 존재하지 않는다.
     return (
       <div
         style={{ height }}
-        className="flex items-center justify-center rounded-[14px] bg-grey-50 text-[13px] font-medium text-grey-700"
+        className="flex flex-col items-center justify-center gap-1 rounded-[14px] bg-grey-50 px-6 text-center"
       >
-        이 단지는 위치 정보를 찾지 못했어요
+        <span className="text-[13px] font-semibold text-grey-800">
+          지도에서 찾을 수 없는 단지예요
+        </span>
+        <span className="text-[12px] leading-relaxed text-grey-700">
+          재건축으로 이름이 바뀌었거나 없어진 단지일 수 있어요
+        </span>
       </div>
     );
   }
