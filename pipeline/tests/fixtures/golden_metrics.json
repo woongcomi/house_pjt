@@ -1,0 +1,537 @@
+{
+  "_comment": "지표 엔진의 계약. pipeline/metrics.py 와 web/lib/metrics.ts 가 이 파일을 함께 로드해 검증한다. 로직 변경 시 여기부터 갱신할 것.",
+  "tolerance": 1e-09,
+  "config": {
+    "CARRY_FORWARD_MAX": 6,
+    "CARRY_BACKWARD_MAX": 2,
+    "RANK_MIN_PERIOD_TRADES": 5,
+    "RANK_MIN_OBS_MONTHS": 3,
+    "RANK_MAX_STALENESS": 6,
+    "RANK_MIN_LIFE_TRADES": 20,
+    "CONF_A_TRADES": 15,
+    "CONF_A_STALENESS": 1
+  },
+  "cases": [
+    {
+      "name": "monotonic_rise",
+      "desc": "단조 상승. 변동폭 == 수익률, 낙폭 0",
+      "series": {
+        "t": [
+          0,
+          12,
+          24,
+          36
+        ],
+        "p": [
+          1000,
+          1100,
+          1200,
+          1300
+        ],
+        "n": [
+          5,
+          5,
+          5,
+          5
+        ],
+        "n_life": 50
+      },
+      "t0": 0,
+      "t1": 36,
+      "expect": {
+        "ok": true,
+        "ret": 0.3,
+        "volatility": 0.3,
+        "drawdown": 0.0,
+        "recovery": 0.3,
+        "mdd": 0.0,
+        "p_max": 1300,
+        "p_min": 1000,
+        "t_max": 36,
+        "t_min": 0,
+        "n_obs": 4,
+        "n_trades": 20,
+        "eligible": true,
+        "confidence": "B",
+        "mode_start": "exact",
+        "mode_end": "exact",
+        "staleness_start": 0,
+        "staleness_end": 0
+      }
+    },
+    {
+      "name": "peak_then_fall",
+      "desc": "2021 고점 시나리오. 변동폭 +50% 인데 고점대비 -26.7% / 관측 월 수가 기간의 1/3 미만이라 신뢰도는 B",
+      "series": {
+        "t": [
+          0,
+          6,
+          12,
+          18,
+          24
+        ],
+        "p": [
+          1000,
+          1200,
+          1500,
+          1300,
+          1100
+        ],
+        "n": [
+          5,
+          5,
+          5,
+          5,
+          5
+        ],
+        "n_life": 50
+      },
+      "t0": 0,
+      "t1": 24,
+      "expect": {
+        "ok": true,
+        "ret": 0.1,
+        "volatility": 0.5,
+        "drawdown": -0.2666666666666667,
+        "recovery": 0.1,
+        "mdd": -0.2666666666666667,
+        "p_max": 1500,
+        "p_min": 1000,
+        "t_max": 12,
+        "t_min": 0,
+        "n_obs": 5,
+        "n_trades": 25,
+        "eligible": true,
+        "confidence": "B"
+      }
+    },
+    {
+      "name": "trough_first_V_misleads",
+      "desc": "저점이 먼저 온 상승장. V=+50% 로 크게 보이지만 실제 최대낙폭은 -6.7% 뿐 — V 와 MDD 를 함께 보여야 하는 이유 / 관측 월 수가 기간의 1/3 미만이라 신뢰도는 B",
+      "series": {
+        "t": [
+          0,
+          12,
+          24
+        ],
+        "p": [
+          1000,
+          1500,
+          1400
+        ],
+        "n": [
+          6,
+          6,
+          6
+        ],
+        "n_life": 50
+      },
+      "t0": 0,
+      "t1": 24,
+      "expect": {
+        "ok": true,
+        "ret": 0.4,
+        "volatility": 0.5,
+        "drawdown": -0.06666666666666665,
+        "recovery": 0.4,
+        "mdd": -0.06666666666666665,
+        "p_max": 1500,
+        "p_min": 1000,
+        "t_max": 12,
+        "t_min": 0,
+        "n_obs": 3,
+        "n_trades": 18,
+        "eligible": true,
+        "confidence": "B"
+      }
+    },
+    {
+      "name": "carry_forward_end",
+      "desc": "종료 시점에 거래 없음 → 4개월 캐리포워드",
+      "series": {
+        "t": [
+          0,
+          4,
+          10
+        ],
+        "p": [
+          1000,
+          1100,
+          1200
+        ],
+        "n": [
+          5,
+          5,
+          5
+        ],
+        "n_life": 50
+      },
+      "t0": 0,
+      "t1": 14,
+      "expect": {
+        "ok": true,
+        "ret": 0.2,
+        "p_end": 1200,
+        "t_end": 10,
+        "staleness_end": 4,
+        "mode_end": "carry_forward",
+        "p_start": 1000,
+        "staleness_start": 0,
+        "mode_start": "exact",
+        "n_obs": 3,
+        "eligible": true
+      }
+    },
+    {
+      "name": "carry_backward_start",
+      "desc": "시작 시점 직후에 첫 거래 → 1개월 캐리백워드 (최대 2개월)",
+      "series": {
+        "t": [
+          5,
+          12,
+          20
+        ],
+        "p": [
+          1000,
+          1100,
+          1150
+        ],
+        "n": [
+          5,
+          5,
+          5
+        ],
+        "n_life": 50
+      },
+      "t0": 4,
+      "t1": 20,
+      "expect": {
+        "ok": true,
+        "p_start": 1000,
+        "t_start": 5,
+        "staleness_start": 1,
+        "mode_start": "carry_backward",
+        "ret": 0.15000000000000013,
+        "eligible": true
+      }
+    },
+    {
+      "name": "staleness_exceeded",
+      "desc": "종료 시점이 마지막 거래로부터 10개월 → 앵커 불가",
+      "series": {
+        "t": [
+          0,
+          10
+        ],
+        "p": [
+          1000,
+          1200
+        ],
+        "n": [
+          5,
+          5
+        ],
+        "n_life": 50
+      },
+      "t0": 0,
+      "t1": 20,
+      "expect": {
+        "ok": false,
+        "reason": "no_anchor"
+      }
+    },
+    {
+      "name": "no_observation_in_period",
+      "desc": "기간 내 거래가 전혀 없음",
+      "series": {
+        "t": [
+          0,
+          1,
+          2
+        ],
+        "p": [
+          1000,
+          1010,
+          1020
+        ],
+        "n": [
+          5,
+          5,
+          5
+        ],
+        "n_life": 50
+      },
+      "t0": 50,
+      "t1": 60,
+      "expect": {
+        "ok": false,
+        "reason": "no_anchor"
+      }
+    },
+    {
+      "name": "single_observation",
+      "desc": "관측 1개. 지표는 계산되지만 관측 월 수 부족으로 랭킹 제외",
+      "series": {
+        "t": [
+          10
+        ],
+        "p": [
+          1000
+        ],
+        "n": [
+          8
+        ],
+        "n_life": 50
+      },
+      "t0": 8,
+      "t1": 12,
+      "expect": {
+        "ok": true,
+        "ret": 0.0,
+        "volatility": 0.0,
+        "mdd": 0.0,
+        "n_obs": 1,
+        "n_trades": 8,
+        "eligible": false,
+        "confidence": "C"
+      }
+    },
+    {
+      "name": "flat_series",
+      "desc": "완전히 평평. 고점·저점 동률이면 가장 이른 시점",
+      "series": {
+        "t": [
+          0,
+          12,
+          24
+        ],
+        "p": [
+          1000,
+          1000,
+          1000
+        ],
+        "n": [
+          5,
+          5,
+          5
+        ],
+        "n_life": 50
+      },
+      "t0": 0,
+      "t1": 24,
+      "expect": {
+        "ok": true,
+        "ret": 0.0,
+        "volatility": 0.0,
+        "drawdown": 0.0,
+        "recovery": 0.0,
+        "mdd": 0.0,
+        "t_max": 0,
+        "t_min": 0,
+        "eligible": true
+      }
+    },
+    {
+      "name": "too_few_period_trades",
+      "desc": "기간 내 거래 3건 (< 5) → 랭킹 제외",
+      "series": {
+        "t": [
+          0,
+          12,
+          24
+        ],
+        "p": [
+          1000,
+          1200,
+          1300
+        ],
+        "n": [
+          1,
+          1,
+          1
+        ],
+        "n_life": 50
+      },
+      "t0": 0,
+      "t1": 24,
+      "expect": {
+        "ok": true,
+        "ret": 0.3,
+        "n_trades": 3,
+        "eligible": false,
+        "confidence": "C"
+      }
+    },
+    {
+      "name": "too_few_life_trades",
+      "desc": "생애 거래 10건 (< 20) → 믹스보정 신뢰 불가로 랭킹 제외",
+      "series": {
+        "t": [
+          0,
+          12,
+          24
+        ],
+        "p": [
+          1000,
+          1200,
+          1300
+        ],
+        "n": [
+          5,
+          5,
+          5
+        ],
+        "n_life": 10
+      },
+      "t0": 0,
+      "t1": 24,
+      "expect": {
+        "ok": true,
+        "ret": 0.3,
+        "n_trades": 15,
+        "eligible": false,
+        "confidence": "C"
+      }
+    },
+    {
+      "name": "cagr_over_24_months",
+      "desc": "36개월간 2배 → CAGR = 2^(1/3) - 1",
+      "series": {
+        "t": [
+          0,
+          36
+        ],
+        "p": [
+          1000,
+          2000
+        ],
+        "n": [
+          10,
+          10
+        ],
+        "n_life": 50
+      },
+      "t0": 0,
+      "t1": 36,
+      "expect": {
+        "ok": true,
+        "ret": 1.0,
+        "cagr": 0.2599210498948732,
+        "n_obs": 2,
+        "eligible": false
+      }
+    },
+    {
+      "name": "cagr_under_24_months_is_zero",
+      "desc": "24개월 미만이면 CAGR 계산하지 않음 (연환산이 과장됨)",
+      "series": {
+        "t": [
+          0,
+          6,
+          12
+        ],
+        "p": [
+          1000,
+          1100,
+          1200
+        ],
+        "n": [
+          6,
+          6,
+          6
+        ],
+        "n_life": 50
+      },
+      "t0": 0,
+      "t1": 12,
+      "expect": {
+        "ok": true,
+        "ret": 0.2,
+        "cagr": 0.0,
+        "eligible": true
+      }
+    },
+    {
+      "name": "carry_forward_not_a_peak",
+      "desc": "고점·저점은 실관측에서만 뽑는다. t1 의 캐리포워드 값이 최고가여도 t_max 는 실관측 월",
+      "series": {
+        "t": [
+          0,
+          6,
+          12
+        ],
+        "p": [
+          1000,
+          900,
+          1500
+        ],
+        "n": [
+          5,
+          5,
+          5
+        ],
+        "n_life": 50
+      },
+      "t0": 0,
+      "t1": 16,
+      "expect": {
+        "ok": true,
+        "p_max": 1500,
+        "t_max": 12,
+        "p_min": 900,
+        "t_min": 6,
+        "p_end": 1500,
+        "t_end": 12,
+        "staleness_end": 4,
+        "mode_end": "carry_forward",
+        "ret": 0.5,
+        "volatility": 0.6666666666666667,
+        "drawdown": 0.0,
+        "n_obs": 3,
+        "eligible": true
+      }
+    },
+    {
+      "name": "confidence_A",
+      "desc": "12개월간 6개월 관측(기간의 1/3 이상) + 거래 24건 + 앵커 정확 → A등급",
+      "series": {
+        "t": [
+          0,
+          2,
+          4,
+          6,
+          8,
+          12
+        ],
+        "p": [
+          1000,
+          1020,
+          1050,
+          1080,
+          1100,
+          1150
+        ],
+        "n": [
+          4,
+          4,
+          4,
+          4,
+          4,
+          4
+        ],
+        "n_life": 80
+      },
+      "t0": 0,
+      "t1": 12,
+      "expect": {
+        "ok": true,
+        "n_obs": 6,
+        "n_trades": 24,
+        "eligible": true,
+        "confidence": "A",
+        "ret": 0.15000000000000013,
+        "volatility": 0.15000000000000013
+      }
+    }
+  ]
+}

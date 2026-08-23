@@ -1,0 +1,26 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# 비밀
+.env
+
+# 데이터 원본 — 900MB 안팎이라 저장소에 두지 않는다.
+# 산출물(web/public/data)만 커밋하고, 원본은 파이프라인으로 재생성한다.
+data/*.db
+data/*.db-wal
+data/*.db-shm
+data/raw/
+data/samples/
+
+# Node / Next
+node_modules/
+.next/
+out/
+.vercel
+
+# OS
+.DS_Store
+Thumbs.db

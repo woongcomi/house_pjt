@@ -1,0 +1,99 @@
+name: 주간 데이터 갱신
+
+# 매주 월요일 새벽에 최신 실거래를 반영하고 재배포한다.
+# 실거래 신고 기한이 계약일로부터 30일이라 과거 달의 데이터도 계속 늘어나므로,
+# collect.py 가 최근 4개월은 항상 다시 받아온다.
+on:
+  schedule:
+    - cron: "0 20 * * 0" # UTC 일요일 20:00 = KST 월요일 05:00
+  workflow_dispatch: # 수동 실행
+
+concurrency:
+  group: data-update
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: 의존성 설치
+        run: pip install -r pipeline/requirements.txt
+
+      # SQLite 원본(약 900MB)은 저장소에 둘 수 없다. 캐시로 이어 붙여
+      # 증분 수집만 하고, 캐시가 없으면 전량 백필로 자동 폴백한다.
+      # (전량은 약 6,200회 호출 / 30분. 일일 한도 1만 건 안쪽)
+      - name: SQLite 캐시 복원
+        uses: actions/cache@v4
+        with:
+          path: data/house.db
+          key: house-db-${{ github.run_id }}
+          restore-keys: |
+            house-db-
+
+      - name: 실거래 수집
+        env:
+          DATA_GO_KR_KEY: ${{ secrets.DATA_GO_KR_KEY }}
+          PYTHONPATH: pipeline
+          PYTHONIOENCODING: utf-8
+        run: python pipeline/collect.py --all
+
+      - name: 집계
+        env:
+          PYTHONPATH: pipeline
+          PYTHONIOENCODING: utf-8
+        run: python pipeline/build.py
+
+      # 좌표는 한 번 구하면 바뀌지 않으므로 새로 생긴 단지만 채운다.
+      # 키가 없으면 건너뛰고 기존 좌표를 그대로 쓴다.
+      - name: 신규 단지 좌표 확보
+        if: ${{ secrets.KAKAO_REST_KEY != '' }}
+        env:
+          KAKAO_REST_KEY: ${{ secrets.KAKAO_REST_KEY }}
+          PYTHONPATH: pipeline
+          PYTHONIOENCODING: utf-8
+        run: python pipeline/geocode.py
+
+      - name: 익스포트
+        env:
+          PYTHONPATH: pipeline
+          PYTHONIOENCODING: utf-8
+        run: python pipeline/export.py
+
+      - name: 산출물 검증
+        env:
+          PYTHONPATH: pipeline
+        run: |
+          python - <<'PY'
+          import json, sys
+          from pathlib import Path
+          meta = json.loads(Path("web/public/data/meta.json").read_text(encoding="utf-8"))
+          # 깨진 데이터가 배포되지 않도록 최소 조건을 확인한다
+          assert meta["complexes"] > 5000, f"단지 수가 너무 적다: {meta['complexes']}"
+          assert meta["trades"] > 1_000_000, f"거래 수가 너무 적다: {meta['trades']}"
+          assert len(meta["gu"]) >= 25, f"구가 빠졌다: {len(meta['gu'])}"
+          print(f"OK  단지 {meta['complexes']:,} · 거래 {meta['trades']:,} · 최종 {meta['lastYm']}")
+          PY
+
+      - name: 변경분 커밋
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add web/public/data
+          if git diff --cached --quiet; then
+            echo "변경 없음 — 커밋하지 않음"
+          else
+            LAST=$(python -c "import json;print(json.load(open('web/public/data/meta.json',encoding='utf-8'))['lastYm'])")
+            git commit -m "data: 실거래 갱신 (${LAST} 기준)"
+            git push
+          fi

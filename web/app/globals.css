@@ -1,0 +1,166 @@
+@import "tailwindcss";
+
+/*
+ * 토스 스타일 디자인 토큰.
+ * 색상값은 토스 UI에서 관찰되는 값 기준이며 공식 브랜드 가이드가 아니다.
+ * 서체도 토스 자체 서체(Toss Product Sans)는 라이선스상 쓸 수 없어
+ * 한글 웹폰트 사실상 표준인 Pretendard 로 대체한다 (로드는 layout.tsx 의 link).
+ *
+ * 대비 원칙 — 흰 배경 기준 명도대비
+ *   grey-900 #191F28  15.9:1   제목·숫자
+ *   grey-800 #333D4B  10.8:1   본문
+ *   grey-700 #4E5968   6.8:1   보조 설명   ← 여기까지가 '읽는 글자'
+ *   grey-600 #6B7684   4.6:1   캡션 (AA 하한)
+ *   grey-500 #8B95A1   2.9:1   ✗ 본문 금지. 아이콘·플레이스홀더 전용
+ *   grey-400 #B0B8C1   2.0:1   ✗ 글자 금지. 구분선·비활성 전용
+ */
+
+@theme {
+  --color-blue-50: #ebf3fe;
+  --color-blue-100: #c9e2ff;
+  --color-blue-500: #3182f6;
+  --color-blue-600: #1b64da;
+  --color-blue-700: #1957b8;
+
+  /* 한국 금융 관행: 상승 = 빨강, 하락 = 파랑 (미국과 반대) */
+  --color-up-50: #fdecee;
+  --color-up-100: #fbd5d9;
+  --color-up-500: #f04452;
+  --color-up-600: #d92b3a;
+  --color-up-700: #b81f2c;
+
+  --color-down-50: #ebf3fe;
+  --color-down-100: #c9e2ff;
+  --color-down-500: #3182f6;
+  --color-down-600: #1b64da;
+  --color-down-700: #1957b8;
+
+  --color-grey-50: #f9fafb;
+  --color-grey-100: #f2f4f6;
+  --color-grey-200: #e5e8eb;
+  --color-grey-300: #d1d6db;
+  --color-grey-400: #b0b8c1;
+  --color-grey-500: #8b95a1;
+  --color-grey-600: #6b7684;
+  --color-grey-700: #4e5968;
+  --color-grey-800: #333d4b;
+  --color-grey-900: #191f28;
+
+  --font-sans: "Pretendard Variable", Pretendard, -apple-system,
+    BlinkMacSystemFont, system-ui, "Malgun Gothic", sans-serif;
+
+  --radius-card: 16px;
+  --radius-btn: 12px;
+
+  --ease-toss: cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+:root {
+  color-scheme: light;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background: var(--color-grey-100);
+  color: var(--color-grey-900);
+  font-family: var(--font-sans);
+  /* 숫자를 세로로 맞춰 읽히게 — 랭킹 리스트에서 중요 */
+  font-feature-settings: "tnum" 1;
+  /* 흐려 보이는 걸 막으려면 서브픽셀 렌더링을 유지하는 편이 낫다.
+     antialiased 는 macOS 에서 글자를 얇게 만들어 저대비와 겹치면 더 흐려진다. */
+  text-rendering: optimizeLegibility;
+}
+
+button,
+.no-select {
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
+.scrollbar-none {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+
+/* 범위 슬라이더 — 토스식 굵은 트랙 */
+input[type="range"] {
+  appearance: none;
+  background: transparent;
+  cursor: pointer;
+}
+input[type="range"]::-webkit-slider-runnable-track {
+  height: 6px;
+  border-radius: 3px;
+  background: var(--color-grey-200);
+}
+input[type="range"]::-webkit-slider-thumb {
+  appearance: none;
+  width: 24px;
+  height: 24px;
+  margin-top: -9px;
+  border-radius: 50%;
+  background: #fff;
+  border: 2px solid var(--color-blue-500);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.16);
+}
+input[type="range"]::-moz-range-track {
+  height: 6px;
+  border-radius: 3px;
+  background: var(--color-grey-200);
+}
+input[type="range"]::-moz-range-thumb {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #fff;
+  border: 2px solid var(--color-blue-500);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.16);
+}
+
+@keyframes sheet-up {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.animate-sheet-up {
+  animation: sheet-up 0.28s var(--ease-toss);
+}
+.animate-fade-in {
+  animation: fade-in 0.2s ease-out;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--color-grey-200) 25%,
+    var(--color-grey-100) 50%,
+    var(--color-grey-200) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.4s infinite;
+}
