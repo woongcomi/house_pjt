@@ -31,7 +31,23 @@ export interface SearchFile {
   items: [string, string, string, string][];
 }
 
-const BASE = "/data";
+/** pipeline/recent.py 산출물 — 최근 N일 개별 거래 (정제 전 원시 거래 기준) */
+export interface RecentFile {
+  v: number;
+  today: string;
+  days: number;
+  refDays: number;
+  refMinDeals: number;
+  lowPct: number;
+  cols: string[];
+  gu: Record<string, { name: string; sido: string }>;
+  stations: string[];
+  /** [계약일, 시군구코드, 법정동, 단지id, 단지명, 전용㎡, 층, 거래가(만원), 평당가, 직전1년대비%(null 가능), 직거래(0/1), 역[]] */
+  rows: [string, string, string, string, string, number, number | null, number, number, number | null, 0 | 1, string[]][];
+}
+
+// GitHub Pages 하위 경로 배포 시 next.config.ts 가 basePath 를 넣어 준다
+const BASE = `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/data`;
 const cache = new Map<string, Promise<unknown>>();
 
 function load<T>(path: string): Promise<T> {
@@ -49,6 +65,7 @@ function load<T>(path: string): Promise<T> {
 export const loadMeta = () => load<Meta>("meta.json");
 export const loadSearch = () => load<SearchFile>("search.json");
 export const loadRegion = () => load<RegionFile>("region.json");
+export const loadRecent = () => load<RecentFile>("recent.json");
 
 const guCache = new Map<string, Promise<ComplexRow[]>>();
 export function loadGu(sgg: string): Promise<ComplexRow[]> {

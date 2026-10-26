@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { loadMeta, loadRegion, type Meta, type RegionFile } from "@/lib/loader";
-import { SEOUL_GU } from "@/lib/seoul";
+import { GYEONGGI_GU, SEOUL_GU, SIDO_OF } from "@/lib/seoul";
 import { formatPctArrow, trendColor } from "@/lib/format";
 import { idxToYm } from "@/lib/metrics";
 import { SearchSheet } from "@/components/SearchSheet";
@@ -13,7 +13,7 @@ function useGuChange(region: RegionFile | null, lastT: number) {
   return useMemo(() => {
     const out: Record<string, number | null> = {};
     if (!region) return out;
-    for (const code of Object.keys(SEOUL_GU)) {
+    for (const code of [...Object.keys(SEOUL_GU), ...Object.keys(GYEONGGI_GU)]) {
       const s = region.region[`sgg:${code}`];
       if (!s) { out[code] = null; continue; }
       const findAt = (t: number) => {
@@ -120,7 +120,48 @@ export default function Home() {
         })}
       </div>
 
+      <div className="px-5 pb-2 pt-6">
+        <h2 className="text-[17px] font-bold text-grey-900">경기 · 신분당선</h2>
+        <p className="mt-1 text-[13px] text-grey-700">판교·정자·미금 / 수지 / 광교</p>
+      </div>
+      <div className="grid grid-cols-3 gap-2 px-5">
+        {Object.entries(GYEONGGI_GU).map(([code, name]) => {
+          const ch = changes[code];
+          return (
+            <Link
+              key={code}
+              href={`/rank?sgg=${code}`}
+              className="rounded-[14px] bg-grey-50 px-3 py-3.5 transition-transform duration-150 active:scale-[0.97]"
+            >
+              <div className="text-[15px] font-semibold text-grey-900">
+                <span className="text-[12px] font-medium text-grey-600">{SIDO_OF[code]} </span>
+                {name}
+              </div>
+              <div
+                className={`mt-1 text-[13px] font-bold tabular-nums ${
+                  ch === null || ch === undefined ? "text-grey-600" : trendColor(ch)
+                }`}
+              >
+                {ch === null || ch === undefined ? "—" : formatPctArrow(ch)}
+              </div>
+            </Link>
+          );
+        })}
+      </div>
+
       <div className="mt-8 space-y-2 px-5">
+        <Link
+          href="/recent"
+          className="flex items-center justify-between rounded-[14px] bg-down-50 px-5 py-4 active:opacity-90"
+        >
+          <div>
+            <div className="text-[15px] font-bold text-down-600">최근 거래 · 저가 거래</div>
+            <div className="mt-0.5 text-[12px] text-down-600/80">
+              지금 체결되는 거래와 1년 중위가보다 싸게 팔린 집
+            </div>
+          </div>
+          <Chevron />
+        </Link>
         <Link
           href="/rank?sgg=11680&view=map"
           className="flex items-center justify-between rounded-[14px] bg-grey-900 px-5 py-4 active:opacity-90"

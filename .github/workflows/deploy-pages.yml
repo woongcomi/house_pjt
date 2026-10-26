@@ -1,0 +1,66 @@
+name: GitHub Pages 배포
+
+# web/ 이나 데이터(web/public/data)가 바뀌면 정적 빌드를 다시 해서 Pages 에 올린다.
+# 주간 데이터 갱신 워크플로가 GITHUB_TOKEN 으로 push 하면 push 이벤트가 안 생기므로
+# workflow_run 으로도 이어 받는다.
+on:
+  push:
+    branches: [main]
+    paths:
+      - "web/**"
+      - ".github/workflows/deploy-pages.yml"
+  workflow_run:
+    workflows: ["주간 데이터 갱신"]
+    types: [completed]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: 의존성 설치
+        working-directory: web
+        run: npm ci
+
+      - name: 정적 빌드
+        working-directory: web
+        env:
+          # 저장소 이름이 곧 하위 경로 (https://<user>.github.io/<repo>/)
+          BASE_PATH: /${{ github.event.repository.name }}
+          # 카카오 JS 키는 저장소 Secrets 에 NEXT_PUBLIC_KAKAO_JS_KEY 로 등록 (없으면 지도만 비활성)
+          NEXT_PUBLIC_KAKAO_JS_KEY: ${{ secrets.NEXT_PUBLIC_KAKAO_JS_KEY }}
+        run: |
+          npm run build
+          touch out/.nojekyll
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: web/out
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

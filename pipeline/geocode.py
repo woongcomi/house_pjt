@@ -26,8 +26,8 @@ from fetch import utcnow
 ADDRESS_URL = "https://dapi.kakao.com/v2/local/search/address.json"
 KEYWORD_URL = "https://dapi.kakao.com/v2/local/search/keyword.json"
 
-# 서울 위경도 대략 범위 — 엉뚱한 곳이 잡히면 버린다
-SEOUL_BOUNDS = (126.73, 127.27, 37.41, 37.72)   # lng_min, lng_max, lat_min, lat_max
+# 서울 + 분당·수지·영통 위경도 대략 범위 — 엉뚱한 곳이 잡히면 버린다
+SEOUL_BOUNDS = (126.73, 127.30, 37.20, 37.72)   # lng_min, lng_max, lat_min, lat_max
 
 REQUEST_INTERVAL = 0.06     # 초당 ~16건. 카카오 권장 한도 내
 MAX_RETRY = 3
@@ -171,14 +171,15 @@ def main() -> int:
 
     try:
         for i, r in enumerate(rows, 1):
-            gu = C.SEOUL_GU.get(r["sgg_cd"], "")
+            gu = C.ALL_GU.get(r["sgg_cd"], "")
+            sido = C.SIDO_OF.get(r["sgg_cd"], "")
             jibun = jibun_of(r["bonbun"], r["bubun"])
 
             g = None
             if jibun:
-                g = geo.by_address(f"서울 {gu} {r['umd_nm']} {jibun}")
+                g = geo.by_address(f"{sido} {gu} {r['umd_nm']} {jibun}")
             if g is None:
-                g = geo.by_keyword(f"서울 {gu} {r['umd_nm']} {r['apt_nm']}", gu)
+                g = geo.by_keyword(f"{sido} {gu} {r['umd_nm']} {r['apt_nm']}", gu)
 
             if g:
                 conn.execute(

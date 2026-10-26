@@ -24,3 +24,7 @@ out/
 # OS
 .DS_Store
 Thumbs.db
+
+# 로컬 실행 로그
+data/*.log
+data/*.err

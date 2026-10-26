@@ -83,7 +83,7 @@ def export_all(conn) -> dict:
     search: list[list] = []
     gu_stats: dict[str, dict] = {}
 
-    for sgg, name in C.SEOUL_GU.items():
+    for sgg, name in C.ALL_GU.items():
         rows = conn.execute(
             """
             SELECT a.canonical_id, a.ym, a.idx_ppa, a.n, a.amount_ref

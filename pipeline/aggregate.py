@@ -189,7 +189,8 @@ def _build_region(conn: sqlite3.Connection) -> None:
         """
         INSERT INTO agg_region_month (region_kind, region_cd, ym, n, ppa_med, idx_ppa)
         SELECT 'seoul', '11', a.ym, SUM(a.n_raw), AVG(a.idx_ppa), AVG(a.idx_ppa)
-        FROM agg_complex_month a
+        FROM agg_complex_month a JOIN complex c USING (canonical_id)
+        WHERE c.sgg_cd LIKE '11%'
         GROUP BY a.ym
         """
     )

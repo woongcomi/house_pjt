@@ -6,7 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { compute, ymToIdx, type MetricResult } from "@/lib/metrics";
 import { loadGu, loadMeta, loadRegion, type Meta, type RegionFile } from "@/lib/loader";
 import type { ComplexRow } from "@/lib/series";
-import { SEOUL_GU } from "@/lib/seoul";
+import { ALL_GU, guName } from "@/lib/seoul";
 import { parsePeriod, periodToQuery, type Period } from "@/lib/period";
 import { formatMonth, formatPct, formatPctAbs, formatPctArrow, formatPpa, trendColor } from "@/lib/format";
 import { SkeletonRows } from "@/components/toss/primitives";
@@ -74,7 +74,7 @@ function DashboardContent() {
   const guStats = useMemo(() => {
     if (!region) return [];
     const out: { code: string; name: string; ret: number; ppaEnd: number }[] = [];
-    for (const [code, name] of Object.entries(SEOUL_GU)) {
+    for (const [code, name] of Object.entries(ALL_GU)) {
       const s = region.region[`sgg:${code}`];
       if (!s) continue;
       const m = compute({ t: s.t, p: s.p, n: s.n, nLife: 999 }, period.t0, period.t1);
@@ -233,7 +233,7 @@ function DashboardContent() {
       {/* ③ 선택 구 상세 */}
       <div className="mt-8 border-t-8 border-grey-100 pt-2">
         <div className="scrollbar-none flex gap-2 overflow-x-auto px-5 py-4">
-          {Object.entries(SEOUL_GU).map(([code, name]) => (
+          {Object.entries(ALL_GU).map(([code, name]) => (
             <button
               key={code}
               onClick={() => setParam({ sgg: code })}
@@ -250,12 +250,12 @@ function DashboardContent() {
           <SkeletonRows count={4} />
         ) : scored.length < 5 ? (
           <p className="px-5 py-8 text-center text-[14px] text-grey-700">
-            이 기간 {SEOUL_GU[focusGu]}에는 분석할 만큼 거래가 있는 단지가 적어요.
+            이 기간 {guName(focusGu)}에는 분석할 만큼 거래가 있는 단지가 적어요.
           </p>
         ) : (
           <>
             <Section
-              title={`${SEOUL_GU[focusGu]} 단지별 성적 분포`}
+              title={`${guName(focusGu)} 단지별 성적 분포`}
               sub={`순위 대상 ${scored.length.toLocaleString()}곳 · 오른쪽일수록 많이 오른 단지`}
             >
               <div className="px-5">

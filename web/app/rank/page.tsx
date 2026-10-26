@@ -6,7 +6,7 @@ import Link from "next/link";
 import { compute, rank as rankFn, ymToIdx, type MetricKey, type MetricResult } from "@/lib/metrics";
 import { loadGu, loadMeta, prefetchAreas, type Meta } from "@/lib/loader";
 import type { ComplexRow } from "@/lib/series";
-import { GU_CODES, SEOUL_GU } from "@/lib/seoul";
+import { GU_CODES, guName } from "@/lib/seoul";
 import { METRICS, METRIC_BY_KEY } from "@/lib/metricDefs";
 import { parsePeriod, periodToQuery, type Period } from "@/lib/period";
 import { formatMonth, formatPct, formatPctAbs, formatPctArrow, formatPpa, trendColor } from "@/lib/format";
@@ -179,7 +179,7 @@ function RankContent() {
       .sort((a, b) => b.row.series.nLife - a.row.series.nLife);
   }, [rows, ranked]);
 
-  const title = sgg === "all" ? "서울 전체" : SEOUL_GU[sgg] ?? sgg;
+  const title = sgg === "all" ? "서울 전체" : guName(sgg);
 
   return (
     <main className="pb-16">
@@ -316,7 +316,7 @@ function RankContent() {
                       {r.s.row.name}
                     </span>
                     <span className="mt-0.5 block truncate text-[12px] text-grey-700">
-                      {sgg === "all" ? `${SEOUL_GU[r.s.sgg]} ` : ""}
+                      {sgg === "all" ? `${guName(r.s.sgg)} ` : ""}
                       {r.s.row.dong}
                       {r.s.row.buildYear ? ` · ${r.s.row.buildYear}년` : ""}
                     </span>
@@ -379,7 +379,7 @@ function RankContent() {
                             {s.row.name}
                           </span>
                           <span className="mt-0.5 block truncate text-[12px] text-grey-600">
-                            {sgg === "all" ? `${SEOUL_GU[s.sgg]} ` : ""}
+                            {sgg === "all" ? `${guName(s.sgg)} ` : ""}
                             {s.row.dong}
                             {s.row.series.t.length > 0 &&
                               ` · 마지막 거래 ${formatMonth(

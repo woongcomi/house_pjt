@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { BottomSheet } from "./toss/BottomSheet";
 import { ListRow } from "./toss/primitives";
 import { loadSearch, type SearchFile } from "@/lib/loader";
-import { SEOUL_GU } from "@/lib/seoul";
+import { guName } from "@/lib/seoul";
 
 export function SearchSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
   const router = useRouter();
@@ -54,7 +54,7 @@ export function SearchSheet({ open, onClose }: { open: boolean; onClose: () => v
           <ListRow
             key={id}
             title={name}
-            subtitle={`${SEOUL_GU[sgg] ?? sgg} ${dong}`}
+            subtitle={`${guName(sgg)} ${dong}`}
             onClick={() => {
               onClose();
               router.push(`/rank?sgg=${sgg}&complex=${encodeURIComponent(id)}`);

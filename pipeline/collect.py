@@ -51,10 +51,11 @@ def is_done(conn, lawd: str, ymd: str) -> bool:
 
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--lawd", default=None, help="시군구코드 (미지정 시 서울 25개 구)")
+    ap.add_argument("--lawd", default=None,
+                    help="시군구코드 (미지정 시 서울 25개 구 + 경기 3개 구)")
     ap.add_argument("--from", dest="ym_from", default=C.START_YM)
     ap.add_argument("--to", dest="ym_to", default=None)
-    ap.add_argument("--all", action="store_true", help="서울 전역 × 전체 기간")
+    ap.add_argument("--all", action="store_true", help="전 지역 × 전체 기간")
     ap.add_argument("--refresh-recent", type=int, default=None,
                     help="최근 N개월만 (재)수집")
     ap.add_argument("--force", action="store_true", help="이미 수집한 달도 다시")
@@ -67,7 +68,7 @@ def main() -> int:
     if args.refresh_recent:
         ym_from = shift_ym(ym_to, -(args.refresh_recent - 1))
 
-    gus = [args.lawd] if args.lawd else list(C.SEOUL_GU)
+    gus = [args.lawd] if args.lawd else list(C.ALL_GU)
     months = month_range(ym_from, ym_to)
 
     # 최근 N개월은 항상 재수집 (신고 지연 + 해제 신고 반영)
@@ -89,7 +90,7 @@ def main() -> int:
 
     try:
         for gu in gus:
-            name = C.SEOUL_GU.get(gu, gu)
+            name = C.ALL_GU.get(gu, gu)
             for ymd in months:
                 done += 1
                 must_refetch = args.force or ymd >= refetch_from

@@ -11,4 +11,25 @@ export const SEOUL_GU: Record<string, string> = {
   "11740": "강동구",
 };
 
+/** 경기 — 신분당선 역세권 (pipeline/config.py GYEONGGI_GU 와 동일) */
+export const GYEONGGI_GU: Record<string, string> = {
+  "41135": "분당구", "41465": "수지구", "41117": "영통구",
+};
+
+export const ALL_GU: Record<string, string> = { ...SEOUL_GU, ...GYEONGGI_GU };
+
+/** 시군구코드 → 시도·시 이름 (경기 구는 시 이름을 붙여야 어디인지 읽힌다) */
+export const SIDO_OF: Record<string, string> = {
+  ...Object.fromEntries(Object.keys(SEOUL_GU).map((c) => [c, "서울"])),
+  "41135": "성남", "41465": "용인", "41117": "수원",
+};
+
+/** '강남구' / '성남 분당구' — 서울은 시도 생략 */
+export function guName(code: string): string {
+  const name = ALL_GU[code];
+  if (!name) return code;
+  return code.startsWith("11") ? name : `${SIDO_OF[code]} ${name}`;
+}
+
+/** 서울 전체 순위·대시보드용 — 서울 25개 구만 */
 export const GU_CODES = Object.keys(SEOUL_GU);
