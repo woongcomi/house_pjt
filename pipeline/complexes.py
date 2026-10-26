@@ -30,6 +30,13 @@ def normalize_name(name: str | None) -> str:
 
 
 def build(conn: sqlite3.Connection) -> dict:
+    # 좌표는 지오코딩(카카오 API)으로 얻은 값이라 재집계 때 지우면 매번 다시 받게 된다.
+    # 지우기 전에 따로 두었다가 새 단지 마스터에 다시 붙인다.
+    conn.execute("DROP TABLE IF EXISTS _geo_keep")
+    conn.execute(
+        "CREATE TEMP TABLE _geo_keep AS "
+        "SELECT canonical_id, lat, lng, geo_src, geo_at FROM complex WHERE lat IS NOT NULL"
+    )
     conn.execute("DELETE FROM complex")
     conn.execute(
         """
@@ -56,6 +63,18 @@ def build(conn: sqlite3.Connection) -> dict:
         GROUP BY apt_seq
         """
     )
+
+    conn.execute(
+        """
+        UPDATE complex SET
+          lat = (SELECT k.lat FROM _geo_keep k WHERE k.canonical_id = complex.canonical_id),
+          lng = (SELECT k.lng FROM _geo_keep k WHERE k.canonical_id = complex.canonical_id),
+          geo_src = (SELECT k.geo_src FROM _geo_keep k WHERE k.canonical_id = complex.canonical_id),
+          geo_at = (SELECT k.geo_at FROM _geo_keep k WHERE k.canonical_id = complex.canonical_id)
+        WHERE canonical_id IN (SELECT canonical_id FROM _geo_keep)
+        """
+    )
+    conn.execute("DROP TABLE _geo_keep")
 
     for row in conn.execute("SELECT canonical_id, apt_nm FROM complex").fetchall():
         conn.execute(
