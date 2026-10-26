@@ -50,7 +50,8 @@ def main() -> int:
     run(PY, "pipeline/collect.py", "--all",
         "--refresh-recent", str(C.RECENT_REFETCH_MONTHS), check=False)
     run(PY, "pipeline/build.py")
-    if os.environ.get("KAKAO_REST_KEY") or C.__dict__.get("KAKAO_REST_KEY"):
+    # config 가 .env 를 os.environ 에 올려두므로 여기서 바로 읽힌다
+    if os.environ.get("KAKAO_REST_KEY", "").strip():
         run(PY, "pipeline/geocode.py", check=False)
     run(PY, "pipeline/export.py")
     run(PY, "pipeline/recent.py")

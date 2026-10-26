@@ -3,9 +3,9 @@ name: 주간 데이터 갱신
 # 매주 월요일 새벽에 최신 실거래를 반영하고 재배포한다.
 # 실거래 신고 기한이 계약일로부터 30일이라 과거 달의 데이터도 계속 늘어나므로,
 # collect.py 가 최근 4개월은 항상 다시 받아온다.
+# 2026-10 부터는 데스크탑이 pipeline/daily.py 로 매일 갱신하므로 자동 실행은 끈다.
+# 데스크탑이 멈췄을 때 수동 실행(workflow_dispatch)용으로만 남겨둔다.
 on:
-  schedule:
-    - cron: "0 20 * * 0" # UTC 일요일 20:00 = KST 월요일 05:00
   workflow_dispatch: # 수동 실행
 
 concurrency:
@@ -56,13 +56,15 @@ jobs:
 
       # 좌표는 한 번 구하면 바뀌지 않으므로 새로 생긴 단지만 채운다.
       # 키가 없으면 건너뛰고 기존 좌표를 그대로 쓴다.
+      # (step 의 if 에서는 secrets 컨텍스트를 쓸 수 없어 스크립트 안에서 확인한다)
       - name: 신규 단지 좌표 확보
-        if: ${{ secrets.KAKAO_REST_KEY != '' }}
         env:
           KAKAO_REST_KEY: ${{ secrets.KAKAO_REST_KEY }}
           PYTHONPATH: pipeline
           PYTHONIOENCODING: utf-8
-        run: python pipeline/geocode.py
+        run: |
+          if [ -z "$KAKAO_REST_KEY" ]; then echo "KAKAO_REST_KEY 없음 — 좌표 단계 건너뜀"; exit 0; fi
+          python pipeline/geocode.py
 
       - name: 익스포트
         env:
