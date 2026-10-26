@@ -136,7 +136,12 @@ function RecentContent() {
         </div>
       </header>
 
-      {err && <p className="p-6 text-[14px] text-grey-600">불러오지 못했어요: {err}</p>}
+      {err && (
+        <p className="p-6 text-[14px] text-grey-600">
+          최근 거래 데이터가 아직 준비되지 않았어요. 다음 갱신 때 채워져요.
+          <span className="mt-1 block text-[11px] text-grey-500">{err}</span>
+        </p>
+      )}
       {!data && !err && <SkeletonRows count={10} />}
 
       {data && stats && (
