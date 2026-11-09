@@ -40,6 +40,18 @@ SINBUNDANG: list[Station] = [
     Station("광교", "41117", ("이의동", "하동"), 37.3023, 127.0453),
 ]
 
+# 분당선 — 오리역 생활권 (관심 단지 죽전 벽산블루밍 주변). 미금·정자는 신분당선과 환승.
+BUNDANG_LINE: list[Station] = [
+    Station("오리", "41135", ("구미동",), 37.3396, 127.1088),
+    Station("죽전", "41465", ("죽전동",), 37.3248, 127.1074),
+]
+
+ALL_STATIONS: list[Station] = SINBUNDANG + BUNDANG_LINE
+LINE_OF: dict[str, str] = {
+    **{s.name: "신분당선" for s in SINBUNDANG},
+    **{s.name: "분당선" for s in BUNDANG_LINE},
+}
+
 
 def distance_m(lat1: float, lng1: float, lat2: float, lng2: float) -> float:
     """하버사인 거리 (m)."""

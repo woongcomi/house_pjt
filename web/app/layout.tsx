@@ -1,16 +1,16 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
+import { Nav } from "@/components/Nav";
 
 export const metadata: Metadata = {
-  title: "서울 아파트, 얼마나 올랐을까",
+  title: "집값 인사이트 — 오리역·신분당선 59㎡ 투자 보드",
   description:
-    "국토교통부 실거래가로 보는 서울 아파트 기간별 상승률·변동폭과 동네 순위",
+    "국토교통부 실거래가로 보는 신분당선·분당선 역세권 아파트의 가격·고점 대비·거래량·강남 대비 상대가치와 저가 거래",
 };
 
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
   themeColor: "#3182F6",
 };
 
@@ -31,10 +31,9 @@ export default function RootLayout({
         />
       </head>
       <body className="min-h-dvh">
-        {/* 모바일 우선. 데스크톱에서도 앱처럼 가운데 한 컬럼으로 읽히게 한다 */}
-        <div className="mx-auto min-h-dvh w-full max-w-[560px] bg-white shadow-[0_0_40px_rgba(0,0,0,0.04)]">
-          {children}
-        </div>
+        <Nav />
+        {/* 넓은 화면은 넓게 쓴다. 좁은 열이 필요한 페이지는 각자 max-w 를 건다 */}
+        <div className="mx-auto min-h-dvh w-full max-w-[1440px]">{children}</div>
       </body>
     </html>
   );

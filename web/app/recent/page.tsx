@@ -108,7 +108,7 @@ function RecentContent() {
   );
 
   return (
-    <main className="pb-16">
+    <main className="mx-auto max-w-[640px] bg-white pb-16">
       <header className="sticky top-0 z-20 border-b border-grey-100 bg-white/95 backdrop-blur">
         <div className="flex items-center gap-2 px-5 pb-2 pt-4">
           <Link href="/" aria-label="홈으로" className="-ml-2 rounded-full p-2 active:bg-grey-100">

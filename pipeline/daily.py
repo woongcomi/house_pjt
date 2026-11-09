@@ -55,6 +55,7 @@ def main() -> int:
         run(PY, "pipeline/geocode.py", check=False)
     run(PY, "pipeline/export.py")
     run(PY, "pipeline/recent.py")
+    run(PY, "pipeline/insights.py")
     if not args.no_push:
         push()
     return 0

@@ -5,6 +5,7 @@
  * 같은 구를 다시 열 때 네트워크를 타지 않도록 메모리에도 캐시한다.
  */
 import { decodeAreas, decodeGu, type AreaRow, type AreasFile, type ComplexRow, type GuFile } from "./series";
+import type { InsightsFile } from "./insights";
 
 export interface Meta {
   v: number;
@@ -66,6 +67,7 @@ export const loadMeta = () => load<Meta>("meta.json");
 export const loadSearch = () => load<SearchFile>("search.json");
 export const loadRegion = () => load<RegionFile>("region.json");
 export const loadRecent = () => load<RecentFile>("recent.json");
+export const loadInsights = () => load<InsightsFile>("insights.json");
 
 const guCache = new Map<string, Promise<ComplexRow[]>>();
 export function loadGu(sgg: string): Promise<ComplexRow[]> {
